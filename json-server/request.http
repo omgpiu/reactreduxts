@@ -1,0 +1,21 @@
+# curl -X POST -H "Content-Type: application/json" -d '{"title":"learnin TS","dateStart":"2021-06-12T12:35:39.616Z","dateEnd":"2021-06-
+#14T17:35:39.616Z"}' http://localhost:3001/events
+POST http://localhost:3001/events
+Content-Type: application/json
+
+{
+  "title": "learnin TS1",
+  "dateStart": "2021-06-12T12:35:39.616Z",
+  "dateEnd": "2021-06-14T17: 35:39.616Z"}
+###
+POST http://localhost:3001/events
+Content-Type: application/json
+
+{
+  "title": "learnin TS1",
+  "dateStart": "2021-06-12T12:35:39.616Z",
+  "dateEnd": "2021-06-14T17: 35:39.616Z"}
+###
+GET http://localhost:3001/events
+
+
