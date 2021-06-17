@@ -3,55 +3,45 @@ import { RootState } from './store';
 import { Action } from 'redux';
 import { selectDateStart } from './recorder';
 import { Omit } from 'react-redux';
+import {
+    CREATE_FAILURE,
+    CREATE_REQUEST,
+    CREATE_SUCCESS,
+    LOAD_FAILURE,
+    LOAD_REQUEST,
+    LOAD_SUCCESS
+} from './user-events-const';
 
-export interface UserEvent {
-    id: number
-    title: string
-    dateStart: string
-    dateEnd: string
+const initialState: UserEventsState = {
+    byIds: {},
+    allIds: []
 }
 
-interface UserEventsState {
-    byIds: Record<UserEvent['id'], UserEvent>
-    allIds: UserEvent['id'][]
-}
-
-const LOAD_REQUEST = 'userEvents/load_request'
-const LOAD_SUCCESS = 'userEvents/load_success'
-const LOAD_FAILURE = 'userEvents/load_failure'
-
-interface LoadRequestAction extends Action<typeof LOAD_REQUEST> {
-}
-
-interface LoadRequestAction extends Action<typeof LOAD_REQUEST> {
-}
-
-interface LoadSuccessAction extends Action<typeof LOAD_SUCCESS> {
-    payload: {
-        events: UserEvent[]
+const userEventsReducer = (state: UserEventsState = initialState, action: LoadSuccessAction | CreateSuccessAction) => {
+    switch (action.type) {
+        case LOAD_SUCCESS :
+            const { events } = action.payload
+            return {
+                ...state, allIds: events.map(({ id }) => id),
+                byIds: events.reduce<UserEventsState['byIds']>((byIds, event) => {
+                    byIds[event.id] = event;
+                    return byIds
+                }, {})
+            }
+        case CREATE_SUCCESS : {
+            const { event } = action.payload
+            return {
+                ...state,
+                allIds: [...state.allIds, event.id],
+                byIds: { ...state.byIds, [event.id]: event }
+            }
+        }
+        default:
+            return state
     }
 }
+export default userEventsReducer
 
-interface LoadFailureAction extends Action<typeof LOAD_FAILURE> {
-    error: string
-}
-
-const CREATE_REQUEST = 'userEvents/create_request'
-const CREATE_SUCCESS = 'userEvents/create_success'
-const CREATE_FAILURE = 'userEvents/create_failure'
-
-interface CreateFailureAction extends Action<typeof CREATE_FAILURE> {
-    error: string
-}
-
-interface CreateSuccessAction extends Action<typeof CREATE_SUCCESS> {
-    payload: {
-        event: UserEvent
-    }
-}
-
-interface CreateRequestAction extends Action<typeof CREATE_REQUEST> {
-}
 
 export const createUserEvent = (): ThunkAction<Promise<void>, RootState, undefined, CreateRequestAction | CreateSuccessAction | CreateFailureAction> =>
     async (dispatch, getState) => {
@@ -81,12 +71,6 @@ export const createUserEvent = (): ThunkAction<Promise<void>, RootState, undefin
         }
 
     }
-export const selectUserEventsState = (state: RootState) => state.userEventsReducer
-export const selectEvents = (state: RootState) => {
-    console.log(state)
-    const selectedState = selectUserEventsState(state)
-    return selectedState.allIds.map(id => selectedState.byIds[id])
-}
 
 export const loadUserEvents = (): ThunkAction<void, RootState, undefined, LoadRequestAction | LoadSuccessAction | LoadFailureAction> => async (dispatch, getState) => {
     dispatch({ type: LOAD_REQUEST })
@@ -103,33 +87,52 @@ export const loadUserEvents = (): ThunkAction<void, RootState, undefined, LoadRe
 
 
 }
-const initialState: UserEventsState = {
-    byIds: {},
-    allIds: []
+export const selectUserEventsState = (state: RootState) => state.userEventsReducer
+export const selectEvents = (state: RootState) => {
+    const selectedState = selectUserEventsState(state)
+    return selectedState.allIds.map(id => selectedState.byIds[id])
 }
-const userEventsReducer = (state: UserEventsState = initialState, action: LoadSuccessAction | CreateSuccessAction) => {
-    switch (action.type) {
-        case LOAD_SUCCESS :
-            const { events } = action.payload
-            return {
-                ...state, allIds: events.map(({ id }) => id),
-                byIds: events.reduce<UserEventsState['byIds']>((byIds, event) => {
-                    byIds[event.id] = event;
-                    return byIds
-                }, {})
-            }
-        case CREATE_SUCCESS : {
-            const { event } = action.payload
-            return {
-                ...state,
-                allIds: [...state.allIds, event.id],
-                byIds: { ...state.byIds, [event.id]: event }
-            }
-        }
-        default:
-            return state
+
+
+export interface UserEvent {
+    id: number
+    title: string
+    dateStart: string
+    dateEnd: string
+}
+
+interface UserEventsState {
+    byIds: Record<UserEvent['id'], UserEvent>
+    allIds: UserEvent['id'][]
+}
+
+
+interface LoadRequestAction extends Action<typeof LOAD_REQUEST> {
+}
+
+interface LoadRequestAction extends Action<typeof LOAD_REQUEST> {
+}
+
+interface LoadSuccessAction extends Action<typeof LOAD_SUCCESS> {
+    payload: {
+        events: UserEvent[]
     }
 }
 
+interface LoadFailureAction extends Action<typeof LOAD_FAILURE> {
+    error: string
+}
 
-export default userEventsReducer
+
+interface CreateFailureAction extends Action<typeof CREATE_FAILURE> {
+    error: string
+}
+
+interface CreateSuccessAction extends Action<typeof CREATE_SUCCESS> {
+    payload: {
+        event: UserEvent
+    }
+}
+
+interface CreateRequestAction extends Action<typeof CREATE_REQUEST> {
+}

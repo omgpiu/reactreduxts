@@ -1,0 +1,6 @@
+export const CREATE_REQUEST = 'userEvents/create_request'
+export const CREATE_SUCCESS = 'userEvents/create_success'
+export const CREATE_FAILURE = 'userEvents/create_failure'
+export const LOAD_REQUEST = 'userEvents/load_request'
+export const LOAD_SUCCESS = 'userEvents/load_success'
+export const LOAD_FAILURE = 'userEvents/load_failure'
