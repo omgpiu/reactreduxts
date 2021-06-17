@@ -7,6 +7,9 @@ import {
     CREATE_FAILURE,
     CREATE_REQUEST,
     CREATE_SUCCESS,
+    DELETE_FAILURE,
+    DELETE_REQUEST,
+    DELETE_SUCCESS,
     LOAD_FAILURE,
     LOAD_REQUEST,
     LOAD_SUCCESS
@@ -17,7 +20,7 @@ const initialState: UserEventsState = {
     allIds: []
 }
 
-const userEventsReducer = (state: UserEventsState = initialState, action: LoadSuccessAction | CreateSuccessAction) => {
+const userEventsReducer = (state: UserEventsState = initialState, action: LoadSuccessAction | CreateSuccessAction | DeleteSuccessAction) => {
     switch (action.type) {
         case LOAD_SUCCESS :
             const { events } = action.payload
@@ -36,12 +39,47 @@ const userEventsReducer = (state: UserEventsState = initialState, action: LoadSu
                 byIds: { ...state.byIds, [event.id]: event }
             }
         }
+        case DELETE_SUCCESS : {
+            const { id } = action.payload
+
+            const newState = {
+                ...state,
+                byIds: { ...state.byIds },
+                allIds: state.allIds.filter(storedId => storedId !== id)
+            }
+            delete newState.byIds[id]
+            return newState
+        }
         default:
             return state
     }
 }
 export default userEventsReducer
+export const deleteUserEvent = (id: UserEvent['id']): ThunkAction<Promise<void>, RootState, undefined, DeleteRequestAction | DeleteFailureAction | DeleteSuccessAction> =>
+    async (dispatch) => {
+        dispatch({
+            type: DELETE_REQUEST
+        })
+        try {
+            const response = await fetch(`http://localhost:3001/events/${ id }`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+            })
+            if (response.ok) {
+                dispatch({
+                    type: DELETE_SUCCESS,
+                    payload: { id }
+                })
+            }
+        } catch (e) {
+            dispatch({ type: DELETE_FAILURE, error: e.message })
 
+        }
+
+
+    }
 
 export const createUserEvent = (): ThunkAction<Promise<void>, RootState, undefined, CreateRequestAction | CreateSuccessAction | CreateFailureAction> =>
     async (dispatch, getState) => {
@@ -87,6 +125,7 @@ export const loadUserEvents = (): ThunkAction<void, RootState, undefined, LoadRe
 
 
 }
+
 export const selectUserEventsState = (state: RootState) => state.userEventsReducer
 export const selectEvents = (state: RootState) => {
     const selectedState = selectUserEventsState(state)
@@ -110,9 +149,6 @@ interface UserEventsState {
 interface LoadRequestAction extends Action<typeof LOAD_REQUEST> {
 }
 
-interface LoadRequestAction extends Action<typeof LOAD_REQUEST> {
-}
-
 interface LoadSuccessAction extends Action<typeof LOAD_SUCCESS> {
     payload: {
         events: UserEvent[]
@@ -123,6 +159,8 @@ interface LoadFailureAction extends Action<typeof LOAD_FAILURE> {
     error: string
 }
 
+interface CreateRequestAction extends Action<typeof CREATE_REQUEST> {
+}
 
 interface CreateFailureAction extends Action<typeof CREATE_FAILURE> {
     error: string
@@ -134,5 +172,15 @@ interface CreateSuccessAction extends Action<typeof CREATE_SUCCESS> {
     }
 }
 
-interface CreateRequestAction extends Action<typeof CREATE_REQUEST> {
+interface DeleteRequestAction extends Action<typeof DELETE_REQUEST> {
+}
+
+interface DeleteFailureAction extends Action<typeof DELETE_FAILURE> {
+    error: string
+}
+
+interface DeleteSuccessAction extends Action<typeof DELETE_SUCCESS> {
+    payload: {
+        id: UserEvent['id']
+    }
 }

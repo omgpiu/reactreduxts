@@ -1,9 +1,8 @@
 import CalendarCSS from './Calendar.module.css'
-import { connect, ConnectedProps, useDispatch, useSelector } from 'react-redux';
-import { loadUserEvents, selectEvents, selectUserEventsState, UserEvent } from '../../state/user-events';
+import { useDispatch, useSelector } from 'react-redux';
+import { deleteUserEvent, loadUserEvents, selectEvents, UserEvent } from '../../state/user-events';
 import React, { useEffect } from 'react';
 import { addZero } from '../utils/utilFunctions';
-import { RootState } from '../../state/store';
 
 // const mapState = (state: RootState) => ({
 //     events: selectUserEventsState(state)
@@ -19,7 +18,7 @@ const createDateKey = (date: Date) => {
     const year = date.getUTCFullYear();
     const month = date.getUTCMonth() + 1;
     const day = date.getUTCDate();
-    return `${year}-${addZero(month)}-${addZero(day)}`
+    return `${ year }-${ addZero(month) }-${ addZero(day) }`
 
 }
 const groupEventsByDay = (events: UserEvent[]) => {
@@ -57,29 +56,30 @@ const Calendar = () => {
         )
     }
     return groupedEvents && sortedGroupKeys ? (
-        <div className={CalendarCSS.calendar}>{sortedGroupKeys.map(dayKey => {
+        <div className={ CalendarCSS.calendar }>{ sortedGroupKeys.map(dayKey => {
             const events = groupedEvents ? groupedEvents[dayKey] : [];
             const groupDate = new Date(dayKey)
             const day = groupDate.getDate()
-            const month = groupDate.toLocaleDateString(undefined, {month: 'long'})
+            const month = groupDate.toLocaleDateString(undefined, { month: 'long' })
 
-            return <div className={CalendarCSS.calendar_day}>
-                <div className={CalendarCSS.calendar_day_label}>
-                    <span>{day} {month}</span>
+            return <div key={ dayKey } className={ CalendarCSS.calendar_day }>
+                <div className={ CalendarCSS.calendar_day_label }>
+                    <span>{ day } { month }</span>
                 </div>
-                {events.map(event => {
+                { events.map(event => {
                     return (
-                        <div key={event.id} className={CalendarCSS.calendar_event}>
-                            <div className={CalendarCSS.calendar_event_info}>
-                                <div className={CalendarCSS.calendar_event_time}>10:00-12:00</div>
-                                <div className={CalendarCSS.calendar_event_title}>Learning Typescript</div>
+                        <div key={ event.id } className={ CalendarCSS.calendar_event }>
+                            <div className={ CalendarCSS.calendar_event_info }>
+                                <div className={ CalendarCSS.calendar_event_time }>10:00-12:00</div>
+                                <div className={ CalendarCSS.calendar_event_title }>Learning Typescript</div>
                             </div>
-                            <button className={CalendarCSS.calendar_event_delete_button}>&times;</button>
+                            <button className={ CalendarCSS.calendar_event_delete_button }
+                                    onClick={ () => dispatch(deleteUserEvent(event.id)) }>&times;</button>
                         </div>
                     )
-                })}
+                }) }
             </div>
-        })}</div>
+        }) }</div>
 
 
     ) : <p>Loading</p>
