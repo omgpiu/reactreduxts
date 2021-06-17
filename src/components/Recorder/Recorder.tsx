@@ -2,8 +2,9 @@ import RecorderStyle from './Record.module.css'
 import { useDispatch, useSelector } from 'react-redux';
 import { selectDateStart, start, stop } from '../../state/recorder';
 import { useEffect, useRef, useState } from 'react';
+import { addZero } from '../utils/utilFunctions';
 
-const addZero = (number: number) => number < 10 ? `0${number}` : `${number}`
+
 const Recorder = () => {
     const dispatch = useDispatch()
     const dateStart = useSelector(selectDateStart)
