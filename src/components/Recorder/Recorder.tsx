@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { selectDateStart, start, stop } from '../../state/recorder';
 import { useEffect, useRef, useState } from 'react';
 import { addZero } from '../utils/utilFunctions';
+import { createUserEvent } from '../../state/user-events';
 
 
 const Recorder = () => {
@@ -20,6 +21,7 @@ const Recorder = () => {
     const onClickHandler = () => {
         if (started) {
             window.clearInterval(interval.current)
+            dispatch(createUserEvent())
             dispatch(stop())
         } else {
             dispatch(start())
@@ -33,13 +35,14 @@ const Recorder = () => {
     useEffect(() => {
         return window.clearInterval(interval.current)
     }, [])
-    return <div className={`${RecorderStyle.recorder} ${started ? RecorderStyle.recorder_started : null}`}>
-        <button className={RecorderStyle.recorder_record}
-                onClick={onClickHandler}>
+    return <div className={ `${ RecorderStyle.recorder } ${ started ? RecorderStyle.recorder_started : null }` }>
+        <button className={ RecorderStyle.recorder_record }
+                onClick={ onClickHandler }>
 
             <span></span>
         </button>
-        <div className={RecorderStyle.recorder_counter}>{addZero(hours)}:{addZero(minutes)}:{addZero(seconds)}</div>
+        <div
+            className={ RecorderStyle.recorder_counter }>{ addZero(hours) }:{ addZero(minutes) }:{ addZero(seconds) }</div>
     </div>
 }
 export default Recorder

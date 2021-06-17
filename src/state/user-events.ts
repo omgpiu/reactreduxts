@@ -1,6 +1,8 @@
 import { ThunkAction } from 'redux-thunk';
 import { RootState } from './store';
 import { Action } from 'redux';
+import { selectDateStart } from './recorder';
+import { Omit } from 'react-redux';
 
 export interface UserEvent {
     id: number
@@ -34,6 +36,51 @@ interface LoadFailureAction extends Action<typeof LOAD_FAILURE> {
     error: string
 }
 
+const CREATE_REQUEST = 'userEvents/create_request'
+const CREATE_SUCCESS = 'userEvents/create_success'
+const CREATE_FAILURE = 'userEvents/create_failure'
+
+interface CreateFailureAction extends Action<typeof CREATE_FAILURE> {
+    error: string
+}
+
+interface CreateSuccessAction extends Action<typeof CREATE_SUCCESS> {
+    payload: {
+        event: UserEvent
+    }
+}
+
+interface CreateRequestAction extends Action<typeof CREATE_REQUEST> {
+}
+
+export const createUserEvent = (): ThunkAction<Promise<void>, RootState, undefined, CreateRequestAction | CreateSuccessAction | CreateFailureAction> =>
+    async (dispatch, getState) => {
+        dispatch({ type: CREATE_REQUEST })
+        try {
+            const dateStart = selectDateStart(getState())
+            const event: Omit<UserEvent, 'id'> = {
+                title: 'No name',
+                dateStart,
+                dateEnd: new Date().toISOString()
+            }
+            const responce = await fetch(`http://localhost:3001/events`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(event)
+            })
+            const createdEvent: UserEvent = await responce.json();
+            dispatch({
+                type: CREATE_SUCCESS,
+                payload: { event: createdEvent }
+            })
+        } catch (e) {
+            console.log(e.message)
+            dispatch({ type: CREATE_FAILURE, error: e.message })
+        }
+
+    }
 export const selectUserEventsState = (state: RootState) => state.userEventsReducer
 export const selectEvents = (state: RootState) => {
     console.log(state)
@@ -42,16 +89,16 @@ export const selectEvents = (state: RootState) => {
 }
 
 export const loadUserEvents = (): ThunkAction<void, RootState, undefined, LoadRequestAction | LoadSuccessAction | LoadFailureAction> => async (dispatch, getState) => {
-    dispatch({type: LOAD_REQUEST})
+    dispatch({ type: LOAD_REQUEST })
     try {
         const res = await fetch('http://localhost:3001/events')
         const events: UserEvent[] = await res.json()
         dispatch({
             type: LOAD_SUCCESS,
-            payload: {events}
+            payload: { events }
         })
     } catch (e) {
-        dispatch({type: LOAD_FAILURE, error: 'Failed to load events.'})
+        dispatch({ type: LOAD_FAILURE, error: 'Failed to load events.' })
     }
 
 
@@ -60,17 +107,25 @@ const initialState: UserEventsState = {
     byIds: {},
     allIds: []
 }
-const userEventsReducer = (state: UserEventsState = initialState, action: LoadRequestAction | LoadSuccessAction | LoadFailureAction) => {
+const userEventsReducer = (state: UserEventsState = initialState, action: LoadSuccessAction | CreateSuccessAction) => {
     switch (action.type) {
         case LOAD_SUCCESS :
-            const {events} = action.payload
+            const { events } = action.payload
             return {
-                ...state, allIds: events.map(({id}) => id),
+                ...state, allIds: events.map(({ id }) => id),
                 byIds: events.reduce<UserEventsState['byIds']>((byIds, event) => {
                     byIds[event.id] = event;
                     return byIds
                 }, {})
             }
+        case CREATE_SUCCESS : {
+            const { event } = action.payload
+            return {
+                ...state,
+                allIds: [...state.allIds, event.id],
+                byIds: { ...state.byIds, [event.id]: event }
+            }
+        }
         default:
             return state
     }
