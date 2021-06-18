@@ -12,7 +12,10 @@ import {
     DELETE_SUCCESS,
     LOAD_FAILURE,
     LOAD_REQUEST,
-    LOAD_SUCCESS
+    LOAD_SUCCESS,
+    UPDATE_FAILURE,
+    UPDATE_REQUEST,
+    UPDATE_SUCCESS
 } from './user-events-const';
 
 const initialState: UserEventsState = {
@@ -20,7 +23,7 @@ const initialState: UserEventsState = {
     allIds: []
 }
 
-const userEventsReducer = (state: UserEventsState = initialState, action: LoadSuccessAction | CreateSuccessAction | DeleteSuccessAction) => {
+const userEventsReducer = (state: UserEventsState = initialState, action: LoadSuccessAction | CreateSuccessAction | DeleteSuccessAction | UpdateSuccessAction) => {
     switch (action.type) {
         case LOAD_SUCCESS :
             const { events } = action.payload
@@ -31,15 +34,16 @@ const userEventsReducer = (state: UserEventsState = initialState, action: LoadSu
                     return byIds
                 }, {})
             }
-        case CREATE_SUCCESS : {
+
+        case CREATE_SUCCESS :
             const { event } = action.payload
             return {
                 ...state,
                 allIds: [...state.allIds, event.id],
                 byIds: { ...state.byIds, [event.id]: event }
             }
-        }
-        case DELETE_SUCCESS : {
+
+        case DELETE_SUCCESS :
             const { id } = action.payload
 
             const newState = {
@@ -49,12 +53,40 @@ const userEventsReducer = (state: UserEventsState = initialState, action: LoadSu
             }
             delete newState.byIds[id]
             return newState
+
+        case UPDATE_SUCCESS : {
+            const { event } = action.payload
+
+            return {
+                ...state,
+                byIds: { ...state.byIds, [event.id]: event },
+
+            }
         }
+
+
         default:
             return state
     }
 }
 export default userEventsReducer
+export const updateUserEvent = (event: UserEvent): ThunkAction<Promise<void>, RootState, undefined, UpdateRequestAction | UpdateFailureAction | UpdateSuccessAction> => async dispatch => {
+    dispatch({ type: UPDATE_REQUEST })
+    try {
+        const response = await fetch(`http://localhost:3001/events/${ event.id }`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(event),
+        })
+        const updatedEvent: UserEvent = await response.json()
+
+        dispatch({ type: UPDATE_SUCCESS, payload: { event: updatedEvent } })
+    } catch (e) {
+        dispatch({ type: UPDATE_FAILURE, error: e.message })
+    }
+}
 export const deleteUserEvent = (id: UserEvent['id']): ThunkAction<Promise<void>, RootState, undefined, DeleteRequestAction | DeleteFailureAction | DeleteSuccessAction> =>
     async (dispatch) => {
         dispatch({
@@ -91,14 +123,14 @@ export const createUserEvent = (): ThunkAction<Promise<void>, RootState, undefin
                 dateStart,
                 dateEnd: new Date().toISOString()
             }
-            const responce = await fetch(`http://localhost:3001/events`, {
+            const response = await fetch(`http://localhost:3001/events`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(event)
             })
-            const createdEvent: UserEvent = await responce.json();
+            const createdEvent: UserEvent = await response.json();
             dispatch({
                 type: CREATE_SUCCESS,
                 payload: { event: createdEvent }
@@ -182,5 +214,18 @@ interface DeleteFailureAction extends Action<typeof DELETE_FAILURE> {
 interface DeleteSuccessAction extends Action<typeof DELETE_SUCCESS> {
     payload: {
         id: UserEvent['id']
+    }
+}
+
+interface UpdateRequestAction extends Action<typeof UPDATE_REQUEST> {
+}
+
+interface UpdateFailureAction extends Action<typeof UPDATE_FAILURE> {
+    error: string
+}
+
+interface UpdateSuccessAction extends Action<typeof UPDATE_SUCCESS> {
+    payload: {
+        event: UserEvent
     }
 }

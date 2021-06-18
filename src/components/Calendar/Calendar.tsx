@@ -1,8 +1,9 @@
 import CalendarCSS from './Calendar.module.css'
 import { useDispatch, useSelector } from 'react-redux';
-import { deleteUserEvent, loadUserEvents, selectEvents, UserEvent } from '../../state/user-events';
+import { loadUserEvents, selectEvents, UserEvent } from '../../state/user-events';
 import React, { useEffect } from 'react';
 import { addZero } from '../utils/utilFunctions';
+import EventItem from '../Recorder/EventItem';
 
 // const mapState = (state: RootState) => ({
 //     events: selectUserEventsState(state)
@@ -66,18 +67,8 @@ const Calendar = () => {
                 <div className={ CalendarCSS.calendar_day_label }>
                     <span>{ day } { month }</span>
                 </div>
-                { events.map(event => {
-                    return (
-                        <div key={ event.id } className={ CalendarCSS.calendar_event }>
-                            <div className={ CalendarCSS.calendar_event_info }>
-                                <div className={ CalendarCSS.calendar_event_time }>10:00-12:00</div>
-                                <div className={ CalendarCSS.calendar_event_title }>Learning Typescript</div>
-                            </div>
-                            <button className={ CalendarCSS.calendar_event_delete_button }
-                                    onClick={ () => dispatch(deleteUserEvent(event.id)) }>&times;</button>
-                        </div>
-                    )
-                }) }
+                { events.map(event => <EventItem event={ event } key={ event.id }/>
+                ) }
             </div>
         }) }</div>
 
